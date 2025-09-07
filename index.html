@@ -11,7 +11,6 @@
       background: #f5f7fa;
       margin: 0;
       padding: 0;
-      text-align: center;
     }
     header {
       background: #4a3aff;
@@ -40,6 +39,7 @@
     .container {
       margin: 40px auto;
       max-width: 700px;
+      text-align: center;
     }
     #searchBar {
       padding: 10px;
@@ -64,8 +64,32 @@
       text-decoration: none;
       color: #007bff;
     }
-    #uploadLink {
-      margin-top: 20px;
+    .upload-container {
+      margin-top: 40px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      display: none; /* hidden until login */
+    }
+    .upload-container h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .upload-container input[type="file"] {
+      margin: 15px 0;
+    }
+    .upload-container button {
+      background: #0077ff;
+      color: white;
+      padding: 10px 20px;
+    }
+    .upload-container button:hover {
+      background: #005ecc;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -81,14 +105,14 @@
   <div class="container">
     <p>Search and download your question papers here.</p>
     <input type="text" id="searchBar" placeholder="Search by file name..." />
-
     <ul id="pdfList"></ul>
 
-    <!-- Upload button (only visible when logged in) -->
-    <div id="uploadLink" style="display:none;">
-      <a href="upload.html">
-        <button>📤 Upload Question Paper</button>
-      </a>
+    <!-- Upload box (only for logged in users) -->
+    <div class="upload-container" id="uploadBox">
+      <h2>📤 Upload Question Paper</h2>
+      <input type="file" id="pdfFile" accept="application/pdf"><br>
+      <button onclick="uploadFile()">Upload</button>
+      <p id="status"></p>
     </div>
   </div>
 
@@ -105,11 +129,11 @@
       if (user) {
         document.getElementById("loginBtn").style.display = "none";
         document.getElementById("logoutBtn").style.display = "inline-block";
-        document.getElementById("uploadLink").style.display = "block";
+        document.getElementById("uploadBox").style.display = "block";
       } else {
         document.getElementById("loginBtn").style.display = "inline-block";
         document.getElementById("logoutBtn").style.display = "none";
-        document.getElementById("uploadLink").style.display = "none";
+        document.getElementById("uploadBox").style.display = "none";
       }
     }
 
@@ -144,8 +168,41 @@
       });
     });
 
+    // Upload File Function
+    async function uploadFile() {
+      const fileInput = document.getElementById("pdfFile");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a PDF file.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result.split(",")[1];
+        document.getElementById("status").innerText = "⏳ Uploading...";
+
+        const response = await fetch("/.netlify/functions/uploadToGitHub", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileContent: base64Data
+          })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          document.getElementById("status").innerText = "✅ Uploaded: " + result.url;
+          loadPDFs(); // refresh list
+        } else {
+          document.getElementById("status").innerText = "❌ Error: " + result.message;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
     loadPDFs();
   </script>
 </body>
 </html>
-
