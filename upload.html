@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Papers</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>📤 Upload Question Papers</h1>
+    <button id="loginBtn" class="btn">Login</button>
+    <button id="logoutBtn" class="btn" style="display:none;">Logout</button>
+  </div>
+
+  <div class="container">
+    <div id="uploadSection" class="card" style="display:none;">
+      <h2>Upload New Question Paper</h2>
+      <input type="file" id="fileUpload" accept="application/pdf">
+      <button onclick="uploadPaper()">Upload</button>
+    </div>
+  </div>
+
+  <script>
+    // 🔑 Handle login/logout
+    netlifyIdentity.on('init', user => updateUI(user));
+    netlifyIdentity.on('login', user => {
+      updateUI(user);
+      netlifyIdentity.close();
+    });
+    netlifyIdentity.on('logout', () => updateUI(null));
+
+    function updateUI(user) {
+      if (user) {
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        document.getElementById('uploadSection').style.display = 'block';
+      } else {
+        document.getElementById('loginBtn').style.display = 'inline-block';
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'none';
+      }
+    }
+
+    document.getElementById('loginBtn').onclick = () => netlifyIdentity.open('login');
+    document.getElementById('logoutBtn').onclick = () => netlifyIdentity.logout();
+
+    // 📂 Upload papers (placeholder – needs Netlify Function or storage service)
+    async function uploadPaper() {
+      const user = netlifyIdentity.currentUser();
+      if (!user) {
+        alert("Please login first.");
+        return;
+      }
+
+      const file = document.getElementById('fileUpload').files[0];
+      if (!file) {
+        alert("Choose a PDF first.");
+        return;
+      }
+
+      // ⚠️ This part needs backend (Netlify Function + Storage)
+      alert("Uploading is not yet connected. This needs a backend function.");
+    }
+  </script>
+</body>
+</html>
