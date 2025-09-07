@@ -67,32 +67,40 @@
   </main>
 
   <script>
-    // Redirect if not logged in
-    netlifyIdentity.on("init", user => {
-      if (!user) {
-        alert("⚠️ You must be logged in to upload.");
-        window.location.href = "index.html";
-      } else {
-        document.getElementById("statusMsg").innerText =
-          "✅ Logged in as " + user.email;
-        document.getElementById("uploadForm").style.display = "block";
-      }
+document.getElementById("uploadForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const fileInput = document.getElementById("pdfFile");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("⚠️ Please select a PDF file first.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64Data = reader.result.split(",")[1];
+
+    const response = await fetch("/.netlify/functions/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileContent: base64Data
+      })
     });
 
-    // Logout
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      netlifyIdentity.logout();
-    });
+    const result = await response.json();
+    if (response.ok) {
+      alert("✅ Uploaded: " + result.name);
+    } else {
+      alert("❌ Upload failed: " + result.error);
+    }
+  };
 
-    netlifyIdentity.on("logout", () => {
-      window.location.href = "index.html";
-    });
-
-    // Dummy upload handler (replace later with real function)
-    document.getElementById("uploadForm").addEventListener("submit", e => {
-      e.preventDefault();
-      alert("📄 File upload feature coming soon!");
-    });
-  </script>
+  reader.readAsDataURL(file);
+});
+</script>
 </body>
 </html>
