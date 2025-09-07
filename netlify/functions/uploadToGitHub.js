@@ -1,15 +1,19 @@
 const { Octokit } = require("@octokit/rest");
 
 exports.handler = async (event) => {
+  console.log("Incoming event body:", event.body);
+
   try {
-    const { fileName, fileContent } = JSON.parse(event.body);
+    const { fileName, fileContent } = JSON.parse(event.body || "{}");
 
     if (!fileName || !fileContent) {
+      console.error("Missing fileName or fileContent", { fileName, fileContent });
       return {
         statusCode: 400,
         body: JSON.stringify({ message: "Missing fileName or fileContent" })
       };
     }
+
 
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 

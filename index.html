@@ -195,42 +195,55 @@
     }
 
     // Upload File
-    async function uploadFile() {
-      if (event) event.preventDefault();
-      const fileInput = document.getElementById("pdfFile");
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("Please select a PDF file.");
-        return;
+    async function uploadFile(event) {
+  if (event) event.preventDefault();
+
+  const fileInput = document.getElementById("pdfFile");
+  const file = fileInput.files[0];
+  if (!file) {
+    document.getElementById("status").innerText = "⚠️ Please select a PDF file.";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64Data = reader.result.split(",")[1];
+    document.getElementById("status").innerText = "⏳ Uploading...";
+
+    try {
+      const response = await fetch("/.netlify/functions/uploadToGitHub", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileContent: base64Data
+        })
+      });
+
+      let resultText = await response.text(); // read raw text first
+      console.log("Raw response:", resultText);
+
+      let result;
+      try {
+        result = JSON.parse(resultText);
+      } catch (e) {
+        throw new Error("Invalid JSON response from server");
       }
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result.split(",")[1];
-        const statusEl = document.getElementById("status");
-        statusEl.innerText = "⏳ Uploading...";
-
-        const response = await fetch("/.netlify/functions/uploadToGitHub", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileContent: base64Data
-          })
-        });
-
-        const result = await response.json();
-        if (response.ok) {
-          statusEl.innerText = "✅ Uploaded successfully!";
-          loadPDFs();
-          setTimeout(() => closeModal(), 1500);
-        } else {
-          console.error("Upload error:", result);
-          statusEl.innerText = "❌ Error: " + (result.message || "Check Netlify logs");
-        }
-      };
-      reader.readAsDataURL(file);
+      if (response.ok) {
+        document.getElementById("status").innerText = "✅ Uploaded: " + result.url;
+        loadPDFs();
+      } else {
+        document.getElementById("status").innerText = "❌ Error: " + (result.message || "Unknown error");
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+      document.getElementById("status").innerText = "❌ Upload failed: " + err.message;
     }
+  };
+  reader.readAsDataURL(file);
+}
+    
 
     loadPDFs();
   </script>
