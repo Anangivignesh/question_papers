@@ -140,7 +140,7 @@
     // Load PDFs from GitHub repo (public folder /pdfs/)
     const repoOwner = "Anangivignesh";
     const repoName = "question_papers";
-    const branch = "main";
+    const branch = "master";
 
     async function loadPDFs() {
       const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/pdfs?ref=${branch}`;
@@ -206,3 +206,4 @@
   </script>
 </body>
 </html>
+
