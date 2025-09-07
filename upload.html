@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Question Paper</title>
+  <title>Upload PDF</title>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -44,51 +45,39 @@
 </head>
 <body>
   <div class="upload-container">
-    <h2>Upload PDF</h2>
-    <input type="file" id="fileInput" accept="application/pdf"><br>
+    <h2>📤 Upload Question Paper</h2>
+    <input type="file" id="pdfFile" accept="application/pdf"><br>
     <button onclick="uploadFile()">Upload</button>
     <p id="status"></p>
   </div>
 
   <script>
-    // 🔹 Replace these with your details
-    const GITHUB_TOKEN = "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";  // ⚠️ Never expose in production
-    const REPO_OWNER = "Anangivignesh";       // e.g. vigneshgani
-    const REPO_NAME = "question_papers";       // e.g. questionpaperssv
-    const BRANCH = "main";                    // or "master"
-
     async function uploadFile() {
-      const fileInput = document.getElementById("fileInput");
+      const fileInput = document.getElementById("pdfFile");
       const file = fileInput.files[0];
       if (!file) {
-        alert("Please select a file first.");
+        alert("Please select a PDF file.");
         return;
       }
 
       const reader = new FileReader();
-      reader.onload = async function () {
-        const content = reader.result.split(",")[1]; // base64 encoded
+      reader.onload = async () => {
+        const base64Data = reader.result.split(",")[1];
 
-        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/pdfs/${file.name}`;
-
-        const response = await fetch(url, {
-          method: "PUT",
-          headers: {
-            "Authorization": `token ${GITHUB_TOKEN}`,
-            "Content-Type": "application/json",
-          },
+        const response = await fetch("/.netlify/functions/uploadToGitHub", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
-            message: `Upload ${file.name}`,
-            content: content,
-            branch: BRANCH
-          }),
+            fileName: file.name,
+            fileContent: base64Data
+          })
         });
 
+        const result = await response.json();
         if (response.ok) {
-          document.getElementById("status").innerText = "✅ File uploaded successfully!";
+          document.getElementById("status").innerText = "✅ Uploaded: " + result.url;
         } else {
-          const error = await response.json();
-          document.getElementById("status").innerText = "❌ Upload failed: " + error.message;
+          document.getElementById("status").innerText = "❌ Error: " + result.message;
         }
       };
       reader.readAsDataURL(file);
