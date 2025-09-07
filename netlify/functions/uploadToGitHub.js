@@ -1,52 +1,84 @@
-import fetch from "node-fetch";
+const fetch = require("node-fetch");
 
-export async function handler(event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
+exports.handler = async (event) => {
   try {
+    if (event.httpMethod !== "POST") {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ message: "Method Not Allowed" }),
+      };
+    }
+
     const { fileName, fileContent } = JSON.parse(event.body);
 
     if (!fileName || !fileContent) {
-      return { statusCode: 400, body: "Missing file data" };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Missing fileName or fileContent" }),
+      };
     }
 
-    const repoOwner = "YOUR_GITHUB_USERNAME";
-    const repoName = "YOUR_REPO_NAME";
-    const branch = "main"; // or "master"
+    const repoOwner = "Anangivignesh";   // <-- change this
+    const repoName = "question_papers";          // <-- change this
+    const branch = "main";                      // or "master"
+    const folder = "pdfs";                      // folder where PDFs will be stored
 
-    const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/pdfs/${fileName}`;
+    const githubToken = process.env.GITHUB_TOKEN;
 
-    const response = await fetch(url, {
-      method: "PUT",
+    // 1. Get the current SHA if file already exists (needed for updates)
+    const filePath = `${folder}/${fileName}`;
+    const getUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}?ref=${branch}`;
+    let sha = null;
+
+    const getResponse = await fetch(getUrl, {
       headers: {
-        "Authorization": `token ${process.env.GITHUB_TOKEN}`,
-        "Content-Type": "application/json"
+        Authorization: `token ${githubToken}`,
+        Accept: "application/vnd.github+json",
       },
-      body: JSON.stringify({
-        message: `Upload ${fileName}`,
-        content: fileContent,
-        branch: branch
-      })
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.message);
+    if (getResponse.ok) {
+      const fileData = await getResponse.json();
+      sha = fileData.sha;
     }
 
-    const result = await response.json();
+    // 2. Commit the new file
+    const putUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+    const putResponse = await fetch(putUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `token ${githubToken}`,
+        Accept: "application/vnd.github+json",
+      },
+      body: JSON.stringify({
+        message: `Add ${fileName}`,
+        content: fileContent,
+        branch: branch,
+        sha: sha || undefined,
+      }),
+    });
+
+    if (!putResponse.ok) {
+      const error = await putResponse.json();
+      return {
+        statusCode: putResponse.status,
+        body: JSON.stringify({ message: error.message }),
+      };
+    }
+
+    const result = await putResponse.json();
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "✅ File uploaded to GitHub",
-        url: result.content.html_url
-      })
+        message: "File uploaded successfully",
+        url: result.content.html_url,
+      }),
     };
-
-  } catch (err) {
-    return { statusCode: 500, body: "Upload failed: " + err.message };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: error.message }),
+    };
   }
-}
+};
