@@ -1,64 +1,69 @@
-const { Octokit } = require("@octokit/rest");
+const fetch = require("node-fetch");
 
 exports.handler = async (event) => {
-  console.log("Incoming event body:", event.body);
-
   try {
-    const { fileName, fileContent } = JSON.parse(event.body || "{}");
-
-    if (!fileName || !fileContent) {
-      console.error("Missing fileName or fileContent", { fileName, fileContent });
+    if (event.httpMethod !== "POST") {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Missing fileName or fileContent" })
+        statusCode: 405,
+        body: JSON.stringify({ message: "Method not allowed" }),
       };
     }
 
+    const { fileName, fileContent } = JSON.parse(event.body || "{}");
 
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-
-    const owner = "Anangivignesh";   // 👈 your GitHub username
-    const repo = "question_papers";  // 👈 your repo name
-    const path = `pdfs/${fileName}`; // file goes to /pdfs folder
-    const branch = "master";
-
-    // check if file already exists
-    let sha;
-    try {
-      const { data } = await octokit.repos.getContent({
-        owner,
-        repo,
-        path,
-        ref: branch
-      });
-      sha = data.sha;
-    } catch (e) {
-      // file does not exist → ignore
+    if (!fileName || !fileContent) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Missing fileName or fileContent" }),
+      };
     }
 
-    const { data } = await octokit.repos.createOrUpdateFileContents({
-      owner,
-      repo,
-      path,
-      message: `Upload ${fileName}`,
-      content: fileContent,
-      branch,
-      sha
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: "Missing GitHub token" }),
+      };
+    }
+
+    const repoOwner = "Anangivignesh";
+    const repoName = "question_papers";
+    const branch = "master";
+
+    const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/pdfs/${fileName}`;
+    const commitMessage = `Add ${fileName}`;
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${githubToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: commitMessage,
+        content: fileContent,
+        branch: branch,
+      }),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ message: data.message || "GitHub upload failed" }),
+      };
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ 
-        message: "File uploaded successfully",
-        url: `https://github.com/${owner}/${repo}/blob/${branch}/${path}`
-      })
+      body: JSON.stringify({ url: data.content.html_url }),
     };
-
-  } catch (err) {
-    console.error("Upload error:", err);
+  } catch (error) {
+    console.error("Upload failed:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: err.message || "Unknown error" })
+      body: JSON.stringify({ message: "Internal Server Error", error: error.message }),
     };
   }
 };

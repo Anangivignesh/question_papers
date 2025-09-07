@@ -212,23 +212,22 @@
 
     try {
       const response = await fetch("/.netlify/functions/uploadToGitHub", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileContent: base64Data
-        })
-      });
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileContent: base64Data
+      })
+    });
 
-      let resultText = await response.text(); // read raw text first
-      console.log("Raw response:", resultText);
+let result;
+try {
+  result = await response.json();
+} catch (err) {
+  const text = await response.text();
+  throw new Error("Invalid JSON response from server. Raw: " + text);
+}
 
-      let result;
-      try {
-        result = JSON.parse(resultText);
-      } catch (e) {
-        throw new Error("Invalid JSON response from server");
-      }
 
       if (response.ok) {
         document.getElementById("status").innerText = "✅ Uploaded: " + result.url;
@@ -243,7 +242,7 @@
   };
   reader.readAsDataURL(file);
 }
-    
+
 
     loadPDFs();
   </script>
