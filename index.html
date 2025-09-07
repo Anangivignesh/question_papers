@@ -1,60 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Question Paper Store</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Question Papers</title>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f8fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      justify-content: flex-end;
+      padding: 1rem;
+      background: #4f46e5;
+      color: white;
+    }
+    button {
+      background: white;
+      color: #4f46e5;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #e0e7ff;
+    }
+    main {
+      text-align: center;
+      padding: 2rem;
+    }
+  </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <div class="navbar">
-    <h1>📘 Question Paper Store</h1>
-    <a href="upload.html" class="btn">Login</a>
-  </div>
-
-  <div class="container">
-    <!-- Search -->
-    <div class="card search-bar">
-      <input type="text" id="searchInput" placeholder="🔍 Search papers by name..." onkeyup="searchPapers()">
-    </div>
-
-    <!-- Papers -->
-    <div class="card">
-      <h2>All Papers</h2>
-      <div id="fileList" class="file-list"></div>
-    </div>
-  </div>
+  <header>
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn" style="display: none;">Logout</button>
+  </header>
+  <main>
+    <h1>📚 Question Papers</h1>
+    <p>Search and download your question papers here.</p>
+    <p id="statusMsg"></p>
+  </main>
 
   <script>
-    // Example: Static list of PDFs in /papers folder
-    let papers = [
-      { name: "Maths 2022", url: "papers/maths_2022.pdf" },
-      { name: "Physics 2021", url: "papers/physics_2021.pdf" },
-      { name: "Chemistry 2020", url: "papers/chemistry_2020.pdf" }
-    ];
+    // Listen for login status changes
+    netlifyIdentity.on("init", user => {
+      if (user) {
+        document.getElementById("loginBtn").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "inline-block";
+        document.getElementById("statusMsg").innerText =
+          "✅ Logged in as " + user.email;
+      }
+    });
 
-    function renderPapers() {
-      const list = document.getElementById('fileList');
-      list.innerHTML = "";
-      papers.forEach(file => {
-        const link = document.createElement("a");
-        link.href = file.url;
-        link.target = "_blank";
-        link.textContent = file.name;
-        list.appendChild(link);
-      });
-    }
+    // Show widget when clicking Login
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      netlifyIdentity.open();
+    });
 
-    function searchPapers() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      const links = document.querySelectorAll('.file-list a');
-      links.forEach(link => {
-        link.style.display = link.textContent.toLowerCase().includes(query) ? "block" : "none";
-      });
-    }
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      netlifyIdentity.logout();
+    });
 
-    renderPapers();
+    // Update buttons on login/logout events
+    netlifyIdentity.on("login", user => {
+      document.getElementById("loginBtn").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+      document.getElementById("statusMsg").innerText =
+        "✅ Logged in as " + user.email;
+      netlifyIdentity.close();
+    });
+
+    netlifyIdentity.on("logout", () => {
+      document.getElementById("loginBtn").style.display = "inline-block";
+      document.getElementById("logoutBtn").style.display = "none";
+      document.getElementById("statusMsg").innerText = "❌ Logged out";
+    });
   </script>
 </body>
 </html>
