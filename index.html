@@ -1,88 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Question Papers</title>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f7f8fa;
+      background: #f5f7fa;
       margin: 0;
       padding: 0;
+      text-align: center;
     }
     header {
-      display: flex;
-      justify-content: flex-end;
-      padding: 1rem;
-      background: #4f46e5;
+      background: #4a3aff;
       color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 22px;
     }
     button {
       background: white;
-      color: #4f46e5;
+      color: #4a3aff;
       border: none;
-      padding: 0.5rem 1rem;
+      padding: 8px 16px;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
     }
     button:hover {
-      background: #e0e7ff;
+      background: #ddd;
     }
-    main {
-      text-align: center;
-      padding: 2rem;
+    .container {
+      margin: 40px auto;
+      max-width: 700px;
+    }
+    #searchBar {
+      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 10px 0;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+    #uploadLink {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <header>
-    <button id="loginBtn">Login</button>
-    <button id="logoutBtn" style="display: none;">Logout</button>
+    <h1>📄 Question Papers</h1>
+    <div>
+      <button id="loginBtn">Login</button>
+      <button id="logoutBtn" style="display:none;">Logout</button>
+    </div>
   </header>
-  <main>
-    <h1>📚 Question Papers</h1>
+
+  <div class="container">
     <p>Search and download your question papers here.</p>
-    <p id="statusMsg"></p>
-  </main>
+    <input type="text" id="searchBar" placeholder="Search by file name..." />
+
+    <ul id="pdfList"></ul>
+
+    <!-- Upload button (only visible when logged in) -->
+    <div id="uploadLink" style="display:none;">
+      <a href="upload.html">
+        <button>📤 Upload Question Paper</button>
+      </a>
+    </div>
+  </div>
 
   <script>
-    // Listen for login status changes
-    netlifyIdentity.on("init", user => {
+    // Init Netlify Identity
+    netlifyIdentity.on("init", user => updateUI(user));
+    netlifyIdentity.on("login", user => updateUI(user));
+    netlifyIdentity.on("logout", () => updateUI(null));
+
+    document.getElementById("loginBtn").onclick = () => netlifyIdentity.open("login");
+    document.getElementById("logoutBtn").onclick = () => netlifyIdentity.logout();
+
+    function updateUI(user) {
       if (user) {
         document.getElementById("loginBtn").style.display = "none";
         document.getElementById("logoutBtn").style.display = "inline-block";
-        document.getElementById("statusMsg").innerText =
-          "✅ Logged in as " + user.email;
+        document.getElementById("uploadLink").style.display = "block";
+      } else {
+        document.getElementById("loginBtn").style.display = "inline-block";
+        document.getElementById("logoutBtn").style.display = "none";
+        document.getElementById("uploadLink").style.display = "none";
       }
+    }
+
+    // Load PDFs from GitHub repo (public folder /pdfs/)
+    const repoOwner = "YOUR_GITHUB_USERNAME";
+    const repoName = "YOUR_REPO_NAME";
+    const branch = "main";
+
+    async function loadPDFs() {
+      const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/pdfs?ref=${branch}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const files = await response.json();
+        const pdfList = document.getElementById("pdfList");
+        pdfList.innerHTML = "";
+        files.forEach(file => {
+          if (file.name.endsWith(".pdf")) {
+            const li = document.createElement("li");
+            li.innerHTML = `<a href="${file.download_url}" target="_blank">${file.name}</a>`;
+            pdfList.appendChild(li);
+          }
+        });
+      }
+    }
+
+    // Search filter
+    document.getElementById("searchBar").addEventListener("input", function() {
+      const filter = this.value.toLowerCase();
+      const items = document.querySelectorAll("#pdfList li");
+      items.forEach(li => {
+        li.style.display = li.textContent.toLowerCase().includes(filter) ? "" : "none";
+      });
     });
 
-    // Show widget when clicking Login
-    document.getElementById("loginBtn").addEventListener("click", () => {
-      netlifyIdentity.open();
-    });
-
-    // Logout
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      netlifyIdentity.logout();
-    });
-
-    // Update buttons on login/logout events
-    netlifyIdentity.on("login", user => {
-      document.getElementById("loginBtn").style.display = "none";
-      document.getElementById("logoutBtn").style.display = "inline-block";
-      document.getElementById("statusMsg").innerText =
-        "✅ Logged in as " + user.email;
-      netlifyIdentity.close();
-    });
-
-    netlifyIdentity.on("logout", () => {
-      document.getElementById("loginBtn").style.display = "inline-block";
-      document.getElementById("logoutBtn").style.display = "none";
-      document.getElementById("statusMsg").innerText = "❌ Logged out";
-    });
+    loadPDFs();
   </script>
 </body>
 </html>
