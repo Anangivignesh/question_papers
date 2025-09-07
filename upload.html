@@ -82,7 +82,7 @@ document.getElementById("uploadForm").addEventListener("submit", async e => {
   reader.onload = async () => {
     const base64Data = reader.result.split(",")[1];
 
-    const response = await fetch("/.netlify/functions/upload", {
+    const response = await fetch("/.netlify/functions/uploadToGitHub", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -93,9 +93,9 @@ document.getElementById("uploadForm").addEventListener("submit", async e => {
 
     const result = await response.json();
     if (response.ok) {
-      alert("✅ Uploaded: " + result.name);
+      alert("✅ Uploaded: " + file.name + "\n📂 " + result.url);
     } else {
-      alert("❌ Upload failed: " + result.error);
+      alert("❌ Upload failed: " + result.message);
     }
   };
 
