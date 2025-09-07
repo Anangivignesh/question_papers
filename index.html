@@ -135,7 +135,7 @@
       <span class="close-btn" onclick="closeModal()">&times;</span>
       <h2>📤 Upload Question Paper</h2>
       <input type="file" id="pdfFile" accept="application/pdf"><br><br>
-      <button onclick="uploadFile()">Upload</button>
+      <button onclick="uploadFile(event)">Upload</button>
       <p id="status"></p>
     </div>
   </div>
@@ -196,6 +196,7 @@
 
     // Upload File
     async function uploadFile() {
+      if (event) event.preventDefault();
       const fileInput = document.getElementById("pdfFile");
       const file = fileInput.files[0];
       if (!file) {
