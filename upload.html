@@ -1,106 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Upload Question Papers</title>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Question Paper</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f7f8fa;
-      margin: 0;
-      padding: 0;
-    }
-    header {
+      background: #f5f7fa;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      padding: 1rem;
-      background: #4f46e5;
-      color: white;
+      height: 100vh;
     }
-    button {
+    .upload-container {
       background: white;
-      color: #4f46e5;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #e0e7ff;
-    }
-    main {
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
       text-align: center;
-      padding: 2rem;
+      width: 350px;
     }
-    form {
-      margin-top: 2rem;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      display: inline-block;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
     }
     input[type="file"] {
-      margin: 1rem 0;
+      margin: 20px 0;
+    }
+    button {
+      background: #0077ff;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #005ecc;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h2>Upload Question Papers</h2>
-    <button id="logoutBtn">Logout</button>
-  </header>
-
-  <main>
-    <p id="statusMsg">Checking login status...</p>
-
-    <form id="uploadForm" style="display: none;">
-      <label for="pdfFile">Choose PDF:</label>
-      <input type="file" id="pdfFile" accept="application/pdf" required />
-      <br />
-      <button type="submit">Upload PDF</button>
-    </form>
-  </main>
+  <div class="upload-container">
+    <h2>Upload PDF</h2>
+    <input type="file" id="fileInput" accept="application/pdf"><br>
+    <button onclick="uploadFile()">Upload</button>
+    <p id="status"></p>
+  </div>
 
   <script>
-document.getElementById("uploadForm").addEventListener("submit", async e => {
-  e.preventDefault();
+    // 🔹 Replace these with your details
+    const GITHUB_TOKEN = "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";  // ⚠️ Never expose in production
+    const REPO_OWNER = "Anangivignesh";       // e.g. vigneshgani
+    const REPO_NAME = "question_papers";       // e.g. questionpaperssv
+    const BRANCH = "main";                    // or "master"
 
-  const fileInput = document.getElementById("pdfFile");
-  const file = fileInput.files[0];
+    async function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a file first.");
+        return;
+      }
 
-  if (!file) {
-    alert("⚠️ Please select a PDF file first.");
-    return;
-  }
+      const reader = new FileReader();
+      reader.onload = async function () {
+        const content = reader.result.split(",")[1]; // base64 encoded
 
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const base64Data = reader.result.split(",")[1];
+        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/pdfs/${file.name}`;
 
-    const response = await fetch("/.netlify/functions/uploadToGitHub", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fileName: file.name,
-        fileContent: base64Data
-      })
-    });
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Authorization": `token ${GITHUB_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: `Upload ${file.name}`,
+            content: content,
+            branch: BRANCH
+          }),
+        });
 
-    const result = await response.json();
-    if (response.ok) {
-      alert("✅ Uploaded: " + file.name + "\n📂 " + result.url);
-    } else {
-      alert("❌ Upload failed: " + result.message);
+        if (response.ok) {
+          document.getElementById("status").innerText = "✅ File uploaded successfully!";
+        } else {
+          const error = await response.json();
+          document.getElementById("status").innerText = "❌ Upload failed: " + error.message;
+        }
+      };
+      reader.readAsDataURL(file);
     }
-  };
-
-  reader.readAsDataURL(file);
-});
-</script>
+  </script>
 </body>
 </html>
