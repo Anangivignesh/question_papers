@@ -245,5 +245,50 @@
 
     loadPDFs();
   </script>
+  <script>
+  // Upload File Function
+  async function uploadFile() {
+    const fileInput = document.getElementById("pdfFile");
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Please select a PDF file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result.split(",")[1];
+      const statusEl = document.getElementById("status");
+      statusEl.innerText = "⏳ Uploading...";
+
+      const response = await fetch("/.netlify/functions/uploadToGitHub", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileContent: base64Data
+        })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        statusEl.innerText = "✅ Uploaded successfully!";
+        loadPDFs();
+
+        // Auto close modal after short delay
+        setTimeout(() => {
+          document.getElementById("uploadModal").style.display = "none";
+          fileInput.value = "";
+          statusEl.innerText = "";
+        }, 1500);
+      } else {
+        console.error("Upload error:", result);
+        statusEl.innerText = "❌ Error: " + (result.message || "Check Netlify logs");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+</script>
 </body>
 </html>
+
