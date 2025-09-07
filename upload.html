@@ -1,69 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Papers</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Question Papers</title>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f8fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #4f46e5;
+      color: white;
+    }
+    button {
+      background: white;
+      color: #4f46e5;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #e0e7ff;
+    }
+    main {
+      text-align: center;
+      padding: 2rem;
+    }
+    form {
+      margin-top: 2rem;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    input[type="file"] {
+      margin: 1rem 0;
+    }
+  </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <div class="navbar">
-    <h1>📤 Upload Question Papers</h1>
-    <button id="loginBtn" class="btn">Login</button>
-    <button id="logoutBtn" class="btn" style="display:none;">Logout</button>
-  </div>
+  <header>
+    <h2>Upload Question Papers</h2>
+    <button id="logoutBtn">Logout</button>
+  </header>
 
-  <div class="container">
-    <div id="uploadSection" class="card" style="display:none;">
-      <h2>Upload New Question Paper</h2>
-      <input type="file" id="fileUpload" accept="application/pdf">
-      <button onclick="uploadPaper()">Upload</button>
-    </div>
-  </div>
+  <main>
+    <p id="statusMsg">Checking login status...</p>
+
+    <form id="uploadForm" style="display: none;">
+      <label for="pdfFile">Choose PDF:</label>
+      <input type="file" id="pdfFile" accept="application/pdf" required />
+      <br />
+      <button type="submit">Upload PDF</button>
+    </form>
+  </main>
 
   <script>
-    // 🔑 Handle login/logout
-    netlifyIdentity.on('init', user => updateUI(user));
-    netlifyIdentity.on('login', user => {
-      updateUI(user);
-      netlifyIdentity.close();
-    });
-    netlifyIdentity.on('logout', () => updateUI(null));
-
-    function updateUI(user) {
-      if (user) {
-        document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('logoutBtn').style.display = 'inline-block';
-        document.getElementById('uploadSection').style.display = 'block';
-      } else {
-        document.getElementById('loginBtn').style.display = 'inline-block';
-        document.getElementById('logoutBtn').style.display = 'none';
-        document.getElementById('uploadSection').style.display = 'none';
-      }
-    }
-
-    document.getElementById('loginBtn').onclick = () => netlifyIdentity.open('login');
-    document.getElementById('logoutBtn').onclick = () => netlifyIdentity.logout();
-
-    // 📂 Upload papers (placeholder – needs Netlify Function or storage service)
-    async function uploadPaper() {
-      const user = netlifyIdentity.currentUser();
+    // Redirect if not logged in
+    netlifyIdentity.on("init", user => {
       if (!user) {
-        alert("Please login first.");
-        return;
+        alert("⚠️ You must be logged in to upload.");
+        window.location.href = "index.html";
+      } else {
+        document.getElementById("statusMsg").innerText =
+          "✅ Logged in as " + user.email;
+        document.getElementById("uploadForm").style.display = "block";
       }
+    });
 
-      const file = document.getElementById('fileUpload').files[0];
-      if (!file) {
-        alert("Choose a PDF first.");
-        return;
-      }
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      netlifyIdentity.logout();
+    });
 
-      // ⚠️ This part needs backend (Netlify Function + Storage)
-      alert("Uploading is not yet connected. This needs a backend function.");
-    }
+    netlifyIdentity.on("logout", () => {
+      window.location.href = "index.html";
+    });
+
+    // Dummy upload handler (replace later with real function)
+    document.getElementById("uploadForm").addEventListener("submit", e => {
+      e.preventDefault();
+      alert("📄 File upload feature coming soon!");
+    });
   </script>
 </body>
 </html>
