@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Question Paper Store</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f7fa;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+      font-size: 1.8rem;
+      color: #2c3e50;
+    }
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    button {
+      cursor: pointer;
+      background: #3498db;
+      color: white;
+      border: none;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 1rem;
+    }
+    .file-list a {
+      display: block;
+      padding: 8px 12px;
+      margin: 6px 0;
+      border-radius: 8px;
+      background: #ecf5ff;
+      text-decoration: none;
+      color: #2980b9;
+      transition: background 0.3s;
+    }
+    .file-list a:hover {
+      background: #d6ebff;
+    }
+  </style>
+</head>
+<body>
+  <h1>📘 Question Paper Store</h1>
+  <div class="container">
+
+    <!-- Upload -->
+    <div class="card">
+      <h2>Add Question Paper</h2>
+      <input type="file" id="fileInput" accept="application/pdf" multiple>
+      <button onclick="addPapers()">Upload</button>
+    </div>
+
+    <!-- Search -->
+    <div class="card search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 Search papers by name..." onkeyup="searchPapers()">
+    </div>
+
+    <!-- Papers -->
+    <div class="card">
+      <h2>All Papers</h2>
+      <div id="fileList" class="file-list"></div>
+    </div>
+
+  </div>
+
+  <script>
+    let papers = [];
+
+    function addPapers() {
+      const fileInput = document.getElementById('fileInput');
+      const files = fileInput.files;
+
+      if (files.length === 0) {
+        alert("Please select at least one PDF file.");
+        return;
+      }
+
+      for (let file of files) {
+        const url = URL.createObjectURL(file);
+        papers.push({ name: file.name, url });
+      }
+
+      fileInput.value = "";
+      renderPapers();
+    }
+
+    function renderPapers() {
+      const list = document.getElementById('fileList');
+      list.innerHTML = "";
+
+      papers.forEach(file => {
+        const link = document.createElement("a");
+        link.href = file.url;
+        link.target = "_blank";
+        link.textContent = file.name;
+        list.appendChild(link);
+      });
+    }
+
+    function searchPapers() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const links = document.querySelectorAll('.file-list a');
+
+      links.forEach(link => {
+        if (link.textContent.toLowerCase().includes(query)) {
+          link.style.display = "block";
+        } else {
+          link.style.display = "none";
+        }
+      });
+    }
+  </script>
+</body>
+</html>
