@@ -64,27 +64,54 @@
       text-decoration: none;
       color: #007bff;
     }
-    .upload-container {
-      margin-top: 40px;
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
       background: white;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-      display: none; /* hidden until login */
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      animation: fadeIn 0.3s ease-in-out;
     }
-    .upload-container h2 {
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal h2 {
       margin-bottom: 15px;
-      color: #333;
     }
-    .upload-container input[type="file"] {
-      margin: 15px 0;
+    .close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
     }
-    .upload-container button {
+    .upload-btn {
       background: #0077ff;
       color: white;
       padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    .upload-container button:hover {
+    .upload-btn:hover {
       background: #005ecc;
     }
     #status {
@@ -107,11 +134,17 @@
     <input type="text" id="searchBar" placeholder="Search by file name..." />
     <ul id="pdfList"></ul>
 
-    <!-- Upload box (only for logged in users) -->
-    <div class="upload-container" id="uploadBox">
+    <!-- Upload button visible only after login -->
+    <button id="openUploadBtn" style="display:none; margin-top:20px;">📤 Upload Question Paper</button>
+  </div>
+
+  <!-- Modal Dialog -->
+  <div id="uploadModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
       <h2>📤 Upload Question Paper</h2>
-      <input type="file" id="pdfFile" accept="application/pdf"><br>
-      <button onclick="uploadFile()">Upload</button>
+      <input type="file" id="pdfFile" accept="application/pdf"><br><br>
+      <button class="upload-btn" onclick="uploadFile()">Upload</button>
       <p id="status"></p>
     </div>
   </div>
@@ -129,15 +162,15 @@
       if (user) {
         document.getElementById("loginBtn").style.display = "none";
         document.getElementById("logoutBtn").style.display = "inline-block";
-        document.getElementById("uploadBox").style.display = "block";
+        document.getElementById("openUploadBtn").style.display = "inline-block";
       } else {
         document.getElementById("loginBtn").style.display = "inline-block";
         document.getElementById("logoutBtn").style.display = "none";
-        document.getElementById("uploadBox").style.display = "none";
+        document.getElementById("openUploadBtn").style.display = "none";
       }
     }
 
-    // Load PDFs from GitHub repo (public folder /pdfs/)
+    // Load PDFs from GitHub
     const repoOwner = "Anangivignesh";
     const repoName = "question_papers";
     const branch = "master";
@@ -168,6 +201,12 @@
       });
     });
 
+    // Modal open/close
+    const modal = document.getElementById("uploadModal");
+    document.getElementById("openUploadBtn").onclick = () => modal.style.display = "flex";
+    document.getElementById("closeModal").onclick = () => modal.style.display = "none";
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
+
     // Upload File Function
     async function uploadFile() {
       const fileInput = document.getElementById("pdfFile");
@@ -192,14 +231,14 @@
         });
 
         const result = await response.json();
-       if (response.ok) {
+        if (response.ok) {
           document.getElementById("status").innerText = "✅ Uploaded: " + result.url;
+          fileInput.value = "";
           loadPDFs();
-      } else {
-        console.error("Upload error:", result);
-        document.getElementById("status").innerText = "❌ Error: " + (result.message || "Check Netlify logs");
-      }
-
+        } else {
+          console.error("Upload error:", result);
+          document.getElementById("status").innerText = "❌ Error: " + (result.message || "Check Netlify logs");
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -208,5 +247,3 @@
   </script>
 </body>
 </html>
-
-
